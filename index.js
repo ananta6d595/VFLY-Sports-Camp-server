@@ -33,9 +33,16 @@ async function run() {
         await client.connect();
         const userCollection = client.db('campDb').collection('users');
 
-        app.post('/users', async (req, res) => {
+        app.patch('/users', async (req, res) => {
             const user = req.body;
-            const result = await userCollection.insertOne(user);
+            const query = { email: user.email };
+            const update = {
+                $set: {
+                    user
+                }
+            };
+            const options = { upsert: true };
+            const result = await userCollection.updateOne(query, update, options);
             res.send(result);
         })
 
