@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 require("dotenv").config();
 const app = express();
@@ -30,12 +30,12 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         const userCollection = client.db("campDb").collection("users");
-
+        // get all users
         app.get("/users", async (req, res) => {
             const result = await userCollection.find().toArray();
             res.send(result);
         });
-
+        //save unique users
         app.patch("/users", async (req, res) => {
             const user = req.body;
             const query = { email: user.email };
@@ -51,17 +51,47 @@ async function run() {
             res.send(result);
         });
 
+
+
+
+
+
+
+
+
+        // role maker apis
         app.patch("/admin/:id", async (req, res) => {
-            const id = req.id;
+            const id = req.params.id;
+            // console.log(id);
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: {
                     role: "admin",
                 },
             };
-            const result = await userCollection.updateMany(filter, updateDoc);
-            return res.send(result);
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
         });
+
+        app.patch("/instructor/:id", async (req, res) => {
+            const id = req.params.id;
+            // console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role: "instructor",
+                },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+
+
+
+
+
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log(
