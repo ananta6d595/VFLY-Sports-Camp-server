@@ -65,12 +65,15 @@ async function run() {
             res.send({ token });
         });
 
+        // add new class
         app.post('/instructor/addClass', async (req, res) => {
             const newClassData = req.body;
 
             const result = await classCollection.insertOne(newClassData);
             res.send(result);
         })
+
+        // specific instructor's all classes
         app.get('/instructor/classes/:email', async (req, res) => {
             const email = req.params.email;
 
@@ -82,7 +85,24 @@ async function run() {
             res.send(result);
         })
 
-        // get a student's class data // TODO: Dummy api
+        // get single class of instructor for update based on _id
+        app.get('/instructor/class/:id', async (req, res) => {
+            const id = req.params.id;
+            // console.log(id);
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const result = await classCollection.findOne(query);
+            res.send(result);
+        })
+        // update class
+        app.patch(`/instructor/updateClass/:id`, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            res.send(await classCollection.updateOne(query))
+        })
+
+        // get a student's class data jwt// TODO: Dummy api
         app.get("/classes", verifyJWT, async (req, res) => {
             const email = req.query.email;
 
@@ -129,7 +149,7 @@ async function run() {
             res.send(result);
         });
 
-        // role maker apis
+        // role maker apis update role based on Admin input
         app.patch("/admin/:id", async (req, res) => {
             const id = req.params.id;
             // console.log(id);
@@ -143,6 +163,7 @@ async function run() {
             res.send(result);
         });
 
+        //update role to instructor based on admin input
         app.patch("/instructor/:id", async (req, res) => {
             const id = req.params.id;
             // console.log(id);
@@ -171,7 +192,7 @@ async function run() {
         }
 
 
-        //security layer: verifyJWT
+        // security layer: verifyJWT
         // is email same?
         //
         // check is admin
