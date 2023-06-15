@@ -75,11 +75,10 @@ async function run() {
             res.send(result);
         })
 
-        // app.get('/allClasses', async (req, res) => {
-        //     const result = await classCollection.find().toArray();
-        //     console.log("OOla",result);
-        //     res.send(result);
-        // })
+        app.get('/allClasses', async (req, res) => {
+            const result = await classCollection.find().toArray();
+            res.send(result);
+        })
 
         // specific instructor's all classes
         app.get('/instructor/classes/:email', async (req, res) => {
