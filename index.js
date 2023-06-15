@@ -59,9 +59,11 @@ async function run() {
         app.post("/jwt", (req, res) => {
             const data = req.body;
 
-            const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, {
+            const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET,
+                {
                 expiresIn: "2h",
-            });
+                }
+            );
             res.send({ token });
         });
 
@@ -72,6 +74,12 @@ async function run() {
             const result = await classCollection.insertOne(newClassData);
             res.send(result);
         })
+
+        // app.get('/allClasses', async (req, res) => {
+        //     const result = await classCollection.find().toArray();
+        //     console.log("OOla",result);
+        //     res.send(result);
+        // })
 
         // specific instructor's all classes
         app.get('/instructor/classes/:email', async (req, res) => {
@@ -98,8 +106,13 @@ async function run() {
         // update class
         app.patch(`/instructor/updateClass/:id`, async (req, res) => {
             const id = req.params.id;
+            const classUpdate = req.body;
             const query = { _id: new ObjectId(id) }
-            res.send(await classCollection.updateOne(query))
+            const updateDoc = {
+                $set: classUpdate
+            }
+            const result = await classCollection.updateOne(query, updateDoc);
+            res.send(result);
         })
 
         // get a student's class data jwt// TODO: Dummy api
