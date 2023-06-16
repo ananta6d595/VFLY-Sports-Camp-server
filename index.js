@@ -100,20 +100,20 @@ async function run() {
         })
 
         // add or update feedback to classes, specially that are denied.
-        // app.patch('/feedBack/:id', async (req, res) => {
-        //     const id = req.params.id;
+        app.patch('/feedBack/:id', async (req, res) => {
+            const id = req.params.id;
 
-        //     const classData = req.body;
+            const classData = req.body;
 
-        //     const query = { _id: new ObjectId(id) }
-        //     const updateDoc = {
-        //         $set: {
-        //             feedback: classData.feedback,
-        //         }
-        //     }
-        //     const result = await classCollection.updateOne(query, updateDoc);
-        //     res.send(result);
-        // })
+            const query = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    feedback: classData.feedback,
+                }
+            }
+            const result = await classCollection.updateOne(query, updateDoc);
+            res.send(result);
+        })
 
 
         // specific instructor's all classes
