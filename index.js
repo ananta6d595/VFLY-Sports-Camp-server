@@ -61,7 +61,7 @@ async function run() {
 
             const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET,
                 {
-                expiresIn: "2h",
+                    expiresIn: "2h",
                 }
             );
             res.send({ token });
@@ -74,11 +74,47 @@ async function run() {
             const result = await classCollection.insertOne(newClassData);
             res.send(result);
         })
-
+        // get all classes for admin classes
         app.get('/allClasses', async (req, res) => {
             const result = await classCollection.find().toArray();
             res.send(result);
         })
+        // app.get('/approvedClasses', async (req, res) => {
+
+        //     const query = {status: "approved"}
+        //     const result = await classCollection.find(query).toArray();
+        //     res.send(result);
+        // })
+
+        // change class status from pending by admin
+        app.patch('/updateStatus', async (req, res) => {
+            const classData = req.body;
+            const query = { _id: new ObjectId(classData.id) }
+            const updateDoc = {
+                $set: {
+                    status: classData.status,
+                }
+            }
+            const result = await classCollection.updateOne(query, updateDoc);
+            res.send(result);
+        })
+
+        // add or update feedback to classes, specially that are denied.
+        // app.patch('/feedBack/:id', async (req, res) => {
+        //     const id = req.params.id;
+
+        //     const classData = req.body;
+
+        //     const query = { _id: new ObjectId(id) }
+        //     const updateDoc = {
+        //         $set: {
+        //             feedback: classData.feedback,
+        //         }
+        //     }
+        //     const result = await classCollection.updateOne(query, updateDoc);
+        //     res.send(result);
+        // })
+
 
         // specific instructor's all classes
         app.get('/instructor/classes/:email', async (req, res) => {
@@ -95,13 +131,15 @@ async function run() {
         // get single class of instructor for update based on _id
         app.get('/instructor/class/:id', async (req, res) => {
             const id = req.params.id;
-            // console.log(id);
+
             const query = {
                 _id: new ObjectId(id)
             }
             const result = await classCollection.findOne(query);
             res.send(result);
         })
+
+
         // update class
         app.patch(`/instructor/updateClass/:id`, async (req, res) => {
             const id = req.params.id;
@@ -225,7 +263,7 @@ async function run() {
         });
         //
         // check is instructor
-        app.get("/instructor/:email", verifyJWT, async (req, res) => {
+        app.get("/isInstructor/:email", verifyJWT, async (req, res) => {
             const email = req.params.email;
 
             if (req.decode.email !== email) {
@@ -236,6 +274,20 @@ async function run() {
             const user = await usersCollection.findOne(query);
             const result = {
                 instructor: user?.role === "instructor",
+            };
+            res.send(result);
+        });
+        app.get("/isStudent/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decode.email !== email) {
+                res.send({ student: false });
+            }
+
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            const result = {
+                student: user?.role === "student",
             };
             res.send(result);
         });
