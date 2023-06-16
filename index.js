@@ -55,6 +55,7 @@ async function run() {
         await client.connect();
         const usersCollection = client.db("campDb").collection("users");
         const classCollection = client.db("campDb").collection("classes");
+        const selectedClassesCollection = client.db("campDb").collection("selectedClasses");
 
         app.post("/jwt", (req, res) => {
             const data = req.body;
@@ -74,6 +75,60 @@ async function run() {
             const result = await classCollection.insertOne(newClassData);
             res.send(result);
         })
+
+        // save selected class
+        app.patch('/selectedClasses', async (req, res) => {
+            const selectedClassData = req.body;
+            const updateDoc = {
+                $set: selectedClassData
+            }
+            const option = { upsert: true }
+            const result = await selectedClassesCollection.updateOne(selectedClassData, updateDoc, option);
+            res.send(result);
+        })
+
+        // [
+        //     {
+        //         _id: new ObjectId("648c5030b8c97ca6acfdb781"),
+        //         class_id: '6489ad3a9bdbd918443c29f5',
+        //         email: 'alu@gmail.com'
+        //     },
+        //     {
+        //         _id: new ObjectId("648c53fbb8c97ca6ac0807fa"),
+        //         class_id: '6489edc88abdb1469db7deca',
+        //         email: 'alu@gmail.com'
+        //     },
+        //     {
+        //         _id: new ObjectId("648c59dcb8c97ca6ac17c921"),
+        //         class_id: '6489ac039bdbd918443c29f0',
+        //         email: 'alu@gmail.com'
+        //     }
+        // ]
+
+        // get selected classes
+        app.get('/selectedClasses/:email', async (req, res) => {
+            const email = req.params.email;
+
+            const filter = { email: email }
+            const selectedClasses = await selectedClassesCollection.find(filter).toArray();
+
+            const allClasses = await classCollection.find().toArray();
+            const selectedClassDetails = allClasses.filter((all) => selectedClasses.some((selected) => {
+
+                return all._id.toHexString() === selected.class_id
+            }))
+            // console.log(selectedClassDetails);
+            res.send(selectedClassDetails);
+        })
+
+        //delete selected class
+        app.delete('/selected/:id',  async (req, res) => {
+            const id = req.params.id;
+            const query = { class_id: id }
+            const result = await selectedClassesCollection.deleteOne(query);
+            res.send(result);
+        })
+
         // get all classes for admin classes
         app.get('/allClasses', async (req, res) => {
             const result = await classCollection.find().toArray();
@@ -81,7 +136,7 @@ async function run() {
         })
         app.get('/approvedClasses', async (req, res) => {
 
-            const query = {status: "approved"}
+            const query = { status: "approved" }
             const result = await classCollection.find(query).toArray();
             res.send(result);
         })
@@ -176,7 +231,7 @@ async function run() {
             const result = await usersCollection.find().toArray();
             res.send(result);
         });
-        app.get("/users/instructor", verifyJWT, async (req, res) => {
+        app.get("/users/instructor", async (req, res) => {
             const query = {
                 role: 'instructor'
             }
@@ -289,6 +344,7 @@ async function run() {
             const result = {
                 student: user?.role === "student",
             };
+
             res.send(result);
         });
 
