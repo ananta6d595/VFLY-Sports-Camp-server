@@ -79,12 +79,12 @@ async function run() {
             const result = await classCollection.find().toArray();
             res.send(result);
         })
-        // app.get('/approvedClasses', async (req, res) => {
+        app.get('/approvedClasses', async (req, res) => {
 
-        //     const query = {status: "approved"}
-        //     const result = await classCollection.find(query).toArray();
-        //     res.send(result);
-        // })
+            const query = {status: "approved"}
+            const result = await classCollection.find(query).toArray();
+            res.send(result);
+        })
 
         // change class status from pending by admin
         app.patch('/updateStatus', async (req, res) => {
