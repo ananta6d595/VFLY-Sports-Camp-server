@@ -91,13 +91,32 @@ async function run() {
             const filter = { email: email }
             const selectedClasses = await selectedClassesCollection.find(filter).toArray();
 
+            const nonEnrolledClasses = selectedClasses.filter(classData => classData.enrolled !== true)
             const allClasses = await classCollection.find().toArray();
-            const selectedClassDetails = allClasses.filter((all) => selectedClasses.some((selected) => {
+            const selectedClassDetails = allClasses.filter((all) => nonEnrolledClasses.some((selected) => {
+                return all._id.toHexString() === selected.class_id
+            }))
+            console.log(selectedClassDetails);
+            res.send(selectedClassDetails);
+        })
+
+        // get enrolled classes
+
+        app.get('/enrolledClasses/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            const filter = {
+                email: email,
+                enrolled: true
+            }
+            const selectedClasses = await selectedClassesCollection.find(filter).toArray();
+            const allClasses = await classCollection.find().toArray();
+            const enrolledClassDetails = allClasses.filter((all) => selectedClasses.some((selected) => {
 
                 return all._id.toHexString() === selected.class_id
             }))
-            // console.log(selectedClassDetails);
-            res.send(selectedClassDetails);
+            // console.log(enrolledClassDetails);
+            res.send(enrolledClassDetails);
         })
         //delete selected class
         app.delete('/selected/:id', async (req, res) => {
