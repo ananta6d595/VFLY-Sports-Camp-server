@@ -57,6 +57,7 @@ async function run() {
         const usersCollection = client.db("campDb").collection("users");
         const classCollection = client.db("campDb").collection("classes");
         const selectedClassesCollection = client.db("campDb").collection("selectedClasses");
+        // const paymentsCollection = client.db("campDb").collection("payments");
 
         app.post("/jwt", (req, res) => {
             const data = req.body;
@@ -69,13 +70,7 @@ async function run() {
             res.send({ token });
         });
 
-        // add new class
-        app.post('/instructor/addClass', async (req, res) => {
-            const newClassData = req.body;
 
-            const result = await classCollection.insertOne(newClassData);
-            res.send(result);
-        })
 
         // save selected class
         app.patch('/selectedClasses', async (req, res) => {
@@ -104,12 +99,91 @@ async function run() {
             // console.log(selectedClassDetails);
             res.send(selectedClassDetails);
         })
-
         //delete selected class
         app.delete('/selected/:id', async (req, res) => {
             const id = req.params.id;
             const query = { class_id: id }
             const result = await selectedClassesCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        //get single class data
+        app.get('/class/:id', async (req, res) => {
+            const id = req.params.id;
+
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const result = await classCollection.findOne(query);
+            console.log(result);
+            res.send(result);
+        })
+
+        // update after payment complete
+        app.patch('/afterPayment', async (req, res) => {
+            const id = req.body.class_Id;
+            const email = req.body.email;
+            const transaction_Id = req.body.transaction_Id;
+            const date = req.body.date;
+
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const updateDoc = {
+                $inc: {
+                    availableSeats: -1,
+                    enrolled: 1
+                }
+            }
+            const classes = await classCollection.updateOne(query, updateDoc);
+
+            const queryClassId = {
+                class_id: id,
+                user: email,
+            }
+            const enrolledStatus = {
+                $set: {
+                    date: date,
+                    transaction_Id: transaction_Id,
+                    enrolled: true,
+                }
+            }
+            const selectedClassDetails = selectedClassesCollection.updateOne(queryClassId, enrolledStatus)
+            // console.log(selectedClassDetails);
+
+            res.send(selectedClassDetails);
+        })
+
+        //get payment history
+        app.patch('/paymentHistory/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+
+            const query = {
+                user: email,
+                enrolled: true
+            }
+
+            const paymentHistory = selectedClassesCollection.find(query).toArray();
+            // console.log(selectedClassDetails);
+
+            res.send(paymentHistory);
+        })
+
+
+
+
+
+
+
+
+
+
+        // add new class
+        app.post('/instructor/addClass', async (req, res) => {
+            const newClassData = req.body;
+
+            const result = await classCollection.insertOne(newClassData);
             res.send(result);
         })
 
@@ -122,6 +196,28 @@ async function run() {
 
             const query = { status: "approved" }
             const result = await classCollection.find(query).toArray();
+            res.send(result);
+        })
+        app.get('/popularClasses', async (req, res) => {
+
+            const query = {
+                status: "approved",
+            }
+            const sort = {
+                enrolled: -1
+            }
+            const result = (await classCollection.find(query).sort(sort).toArray()).splice(0, 6);
+            res.send(result);
+        })
+
+        app.get('/favInstructor', async (req, res) => {
+
+
+            const query =
+            {
+                role: "instructor"
+            }
+            const result = (await usersCollection.find(query).toArray()).splice(0, 6);
             res.send(result);
         })
 
@@ -333,11 +429,11 @@ async function run() {
         });
 
 
-        //payment
-        app.post('/create-payment-intent',   async (req, res) => {
-            const {price} = req.body;
+        //payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
             const amount = parseInt(price) * 100;
-            console.log("amount:", amount);
+            // console.log("amount:", amount);
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: 'usd',
@@ -349,21 +445,9 @@ async function run() {
 
         })
 
-        // create payment intent
-        // app.post('/create-payment-intent', verifyJWT, async (req, res) => {
-        //     const { price } = req.body
-        //     const amount = parseFloat(price) * 100
-        //     if (!price) return
-        //     const paymentIntent = await stripe.paymentIntents.create({
-        //         amount: amount,
-        //         currency: 'usd',
-        //         payment_method_types: ['card'],
-        //     })
 
-        //     res.send({
-        //         clientSecret: paymentIntent.client_secret,
-        //     })
-        // })
+
+
 
 
 
