@@ -4,6 +4,7 @@ require("dotenv").config();
 const app = express();
 const cors = require("cors");
 var jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
 const port = process.env.PORT || 5000;
 
@@ -52,7 +53,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         const usersCollection = client.db("campDb").collection("users");
         const classCollection = client.db("campDb").collection("classes");
         const selectedClassesCollection = client.db("campDb").collection("selectedClasses");
@@ -87,23 +88,6 @@ async function run() {
             res.send(result);
         })
 
-        // [
-        //     {
-        //         _id: new ObjectId("648c5030b8c97ca6acfdb781"),
-        //         class_id: '6489ad3a9bdbd918443c29f5',
-        //         email: 'alu@gmail.com'
-        //     },
-        //     {
-        //         _id: new ObjectId("648c53fbb8c97ca6ac0807fa"),
-        //         class_id: '6489edc88abdb1469db7deca',
-        //         email: 'alu@gmail.com'
-        //     },
-        //     {
-        //         _id: new ObjectId("648c59dcb8c97ca6ac17c921"),
-        //         class_id: '6489ac039bdbd918443c29f0',
-        //         email: 'alu@gmail.com'
-        //     }
-        // ]
 
         // get selected classes
         app.get('/selectedClasses/:email', async (req, res) => {
@@ -122,7 +106,7 @@ async function run() {
         })
 
         //delete selected class
-        app.delete('/selected/:id',  async (req, res) => {
+        app.delete('/selected/:id', async (req, res) => {
             const id = req.params.id;
             const query = { class_id: id }
             const result = await selectedClassesCollection.deleteOne(query);
@@ -347,6 +331,48 @@ async function run() {
 
             res.send(result);
         });
+
+
+        //payment
+        app.post('/create-payment-intent',   async (req, res) => {
+            const {price} = req.body;
+            const amount = parseInt(price) * 100;
+            console.log("amount:", amount);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            })
+
+        })
+
+        // create payment intent
+        // app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+        //     const { price } = req.body
+        //     const amount = parseFloat(price) * 100
+        //     if (!price) return
+        //     const paymentIntent = await stripe.paymentIntents.create({
+        //         amount: amount,
+        //         currency: 'usd',
+        //         payment_method_types: ['card'],
+        //     })
+
+        //     res.send({
+        //         clientSecret: paymentIntent.client_secret,
+        //     })
+        // })
+
+
+
+
+
+
+
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
